@@ -1,5 +1,14 @@
 import { useEffect, useState } from 'react'
-import type { Task } from '../types'
+
+/** Minimal task shape the rings need — full Task rows and shared-view rows both fit. */
+export interface RingTask {
+  id: string
+  title: string
+  is_done: boolean
+  estimate_minutes: number | null
+  spent_seconds: number
+  timer_started_at: string | null
+}
 
 /** Large ring radii, outside → inside (Apple-Watch style). */
 const RADII = [108, 91, 74, 57, 40]
@@ -10,7 +19,7 @@ const STROKE = 14
 const MAX_RINGS = 5
 const CENTER = 120
 
-function progressOf(task: Task, nowMs: number): number {
+function progressOf(task: RingTask, nowMs: number): number {
   if (task.is_done) return 1
   const estimateSeconds = task.estimate_minutes != null ? task.estimate_minutes * 60 : null
   if (estimateSeconds == null || estimateSeconds <= 0) return 0
@@ -22,7 +31,7 @@ function progressOf(task: Task, nowMs: number): number {
   return Math.min(1, spent / estimateSeconds)
 }
 
-function statusOf(task: Task, progress: number): string {
+function statusOf(task: RingTask, progress: number): string {
   if (task.is_done) return 'Closed'
   if (task.timer_started_at) return 'Running'
   if (task.estimate_minutes == null) return 'No estimate'
@@ -64,7 +73,7 @@ function MiniRing({ progress, color }: { progress: number; color: string }) {
 }
 
 interface ActivityRingsProps {
-  tasks: Task[]
+  tasks: RingTask[]
 }
 
 export function ActivityRings({ tasks }: ActivityRingsProps) {

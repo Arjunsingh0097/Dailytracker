@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ExternalLinkIcon, PrIcon } from './Icon'
+import { ActivityRings, type RingTask } from './ActivityRings'
 import { fetchSharedDay, type SharedDayData } from '../lib/shares'
 import { formatDayHeading } from '../lib/dates'
 import { formatDuration, formatMinutes } from '../lib/format'
@@ -34,6 +35,19 @@ export function SharedDay({ token }: { token: string }) {
   const notFound = !loading && shared === null
   const empty = !loading && shared !== null && shared.tasks.length === 0
 
+  const ringTasks = useMemo<RingTask[]>(
+    () =>
+      (shared?.tasks ?? []).map((row, index) => ({
+        id: `shared-${index}`,
+        title: row.title,
+        is_done: row.is_done,
+        estimate_minutes: row.estimate_minutes,
+        spent_seconds: row.spent_seconds,
+        timer_started_at: row.timer_started_at,
+      })),
+    [shared],
+  )
+
   return (
     <div className="auth-shell share-shell">
       <div className="app-brand share-brand">
@@ -60,6 +74,7 @@ export function SharedDay({ token }: { token: string }) {
         <div className="share-day">
           <h1 className="day-title share-day-title">{formatDayHeading(shared!.task_date)}</h1>
           <p className="gh-note share-day-note">Shared publicly · read-only view</p>
+          <ActivityRings tasks={ringTasks} />
           <ul className="task-list">
             {shared!.tasks.map((row, index) => {
               const seconds = runningSeconds(row.spent_seconds, row.timer_started_at)

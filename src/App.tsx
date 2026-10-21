@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { ReactNode } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { useAuth } from './hooks/useAuth'
 import { useTasks } from './hooks/useTasks'
@@ -22,6 +23,7 @@ import { GithubSettings } from './components/GithubSettings'
 import { PullRequestList } from './components/PullRequestList'
 import { GithubActivity } from './components/GithubActivity'
 import { SharedDay } from './components/SharedDay'
+import { ActivityRings } from './components/ActivityRings'
 
 type MainView = 'tasks' | 'prs' | 'settings'
 
@@ -45,7 +47,7 @@ function syncDateToUrl(dateKey: string): void {
   window.history.replaceState(null, '', url.toString())
 }
 
-function TrackerApp({ github }: { github: GithubApi }) {
+function TrackerApp({ github, tabs }: { github: GithubApi; tabs?: ReactNode }) {
   const { user } = useAuth()
   const { showToast } = useToasts()
   const today = todayKey()
@@ -180,67 +182,76 @@ function TrackerApp({ github }: { github: GithubApi }) {
   }
 
   return (
-    <main className="app-main">
-      <WeekStrip days={week} selected={selectedDate} today={today} stats={dayStats} onSelect={setSelectedDate} />
+    <div className="content-grid">
+      <div className="content-col-left">
+        {tabs}
+        <main className="app-main">
+          <WeekStrip days={week} selected={selectedDate} today={today} stats={dayStats} onSelect={setSelectedDate} />
 
-      <DayHeading
-        dateKey={selectedDate}
-        today={today}
-        shared={shareId !== null}
-        sharing={sharing}
-        onPrev={() => setSelectedDate((d) => addDays(d, -1))}
-        onNext={() => setSelectedDate((d) => addDays(d, 1))}
-        onJumpToToday={() => setSelectedDate(today)}
-        onShare={() => void handleShare()}
-        onCopyShare={() => {
-          if (shareId) void copyShareLink(shareId)
-        }}
-        onRevokeShare={() => {
-          if (shareId) void revokeShare(shareId)
-        }}
-      />
+          <DayHeading
+            dateKey={selectedDate}
+            today={today}
+            shared={shareId !== null}
+            sharing={sharing}
+            onPrev={() => setSelectedDate((d) => addDays(d, -1))}
+            onNext={() => setSelectedDate((d) => addDays(d, 1))}
+            onJumpToToday={() => setSelectedDate(today)}
+            onShare={() => void handleShare()}
+            onCopyShare={() => {
+              if (shareId) void copyShareLink(shareId)
+            }}
+            onRevokeShare={() => {
+              if (shareId) void revokeShare(shareId)
+            }}
+          />
 
-      <DaySummary tasks={tasks} />
+          <DaySummary tasks={tasks} />
 
-      <AddTaskForm onAdd={addTask} titleInputRef={addInputRef} />
+          <AddTaskForm onAdd={addTask} titleInputRef={addInputRef} />
 
-      {error && (
-        <div className="load-error clay-card" role="alert">
-          <p>{error}</p>
-          <button type="button" className="pill-button ghost" onClick={() => void refresh()}>
-            Try again
-          </button>
-        </div>
-      )}
+          {error && (
+            <div className="load-error clay-card" role="alert">
+              <p>{error}</p>
+              <button type="button" className="pill-button ghost" onClick={() => void refresh()}>
+                Try again
+              </button>
+            </div>
+          )}
 
-      <TaskList
-        tasks={tasks}
-        loading={loading}
-        onToggleDone={toggleDone}
-        onUpdate={updateTaskFields}
-        onDelete={deleteTask}
-        onStartTimer={startTimer}
-        onPauseTimer={pauseTimer}
-      />
+          <TaskList
+            tasks={tasks}
+            loading={loading}
+            onToggleDone={toggleDone}
+            onUpdate={updateTaskFields}
+            onDelete={deleteTask}
+            onStartTimer={startTimer}
+            onPauseTimer={pauseTimer}
+          />
 
-      {user && (
-        <GithubActivity
-          userId={user.id}
-          dateKey={selectedDate}
-          enabled={github.connections.length > 0}
-        />
-      )}
+          {user && (
+            <GithubActivity
+              userId={user.id}
+              dateKey={selectedDate}
+              enabled={github.connections.length > 0}
+            />
+          )}
 
-      <footer className="app-footer">
-        {unfinishedCount > 0 ? (
-          <button type="button" className="pill-button ghost" onClick={() => void handleMoveUnfinished()}>
-            Move unfinished to tomorrow ({unfinishedCount})
-          </button>
-        ) : (
-          <span className="footer-note">Press N to add a task · Start a timer and it keeps running across reloads and devices.</span>
-        )}
-      </footer>
-    </main>
+          <footer className="app-footer">
+            {unfinishedCount > 0 ? (
+              <button type="button" className="pill-button ghost" onClick={() => void handleMoveUnfinished()}>
+                Move unfinished to tomorrow ({unfinishedCount})
+              </button>
+            ) : (
+              <span className="footer-note">Press N to add a task · Start a timer and it keeps running across reloads and devices.</span>
+            )}
+          </footer>
+        </main>
+      </div>
+
+      <aside className="content-col-right">
+        <ActivityRings tasks={tasks} />
+      </aside>
+    </div>
   )
 }
 
@@ -250,8 +261,30 @@ function MainApp({ user }: { user: User }) {
   const github = useGithub(user.id)
   const [view, setView] = useState<MainView>('tasks')
 
+  const tabsNav =
+    view !== 'settings' ? (
+      <nav className="tab-strip" aria-label="Main sections">
+        <button
+          type="button"
+          className={`tab-pill${view === 'tasks' ? ' is-selected' : ''}`}
+          aria-current={view === 'tasks' ? 'page' : undefined}
+          onClick={() => setView('tasks')}
+        >
+          Tasks
+        </button>
+        <button
+          type="button"
+          className={`tab-pill${view === 'prs' ? ' is-selected' : ''}`}
+          aria-current={view === 'prs' ? 'page' : undefined}
+          onClick={() => setView('prs')}
+        >
+          Pull requests
+        </button>
+      </nav>
+    ) : null
+
   return (
-    <div className="app-shell">
+    <div className={`app-shell${view === 'tasks' ? ' is-wide' : ''}`}>
       <Header
         email={user.email ?? ''}
         theme={theme}
@@ -261,30 +294,12 @@ function MainApp({ user }: { user: User }) {
         settingsActive={view === 'settings'}
       />
 
-      {view !== 'settings' && (
-        <nav className="tab-strip" aria-label="Main sections">
-          <button
-            type="button"
-            className={`tab-pill${view === 'tasks' ? ' is-selected' : ''}`}
-            aria-current={view === 'tasks' ? 'page' : undefined}
-            onClick={() => setView('tasks')}
-          >
-            Tasks
-          </button>
-          <button
-            type="button"
-            className={`tab-pill${view === 'prs' ? ' is-selected' : ''}`}
-            aria-current={view === 'prs' ? 'page' : undefined}
-            onClick={() => setView('prs')}
-          >
-            Pull requests
-          </button>
-        </nav>
-      )}
-
-      {view === 'tasks' && <TrackerApp github={github} />}
+      {view === 'tasks' && <TrackerApp github={github} tabs={tabsNav} />}
       {view === 'prs' && (
-        <PullRequestList userId={user.id} github={github} onOpenTasks={() => setView('tasks')} />
+        <>
+          {tabsNav}
+          <PullRequestList userId={user.id} github={github} onOpenTasks={() => setView('tasks')} />
+        </>
       )}
       {view === 'settings' && (
         <div className="settings-page">

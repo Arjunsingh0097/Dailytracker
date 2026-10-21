@@ -304,7 +304,10 @@ body {
   width: 22px;
   height: 22px;
   border-radius: 8px;
-  background: var(--surface);
+  background-color: var(--surface);
+  background-image: url('/icon-192.png');
+  background-size: cover;
+  background-position: center;
   box-shadow: var(--shadow-btn);
   display: inline-block;
   flex: none;

@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { User } from '@supabase/supabase-js'
 import { useAuth } from './hooks/useAuth'
 import { useTasks } from './hooks/useTasks'
 import { useTheme } from './hooks/useTheme'
+import { useGithub, type GithubApi } from './hooks/useGithub'
 import { useToasts, ToastProvider } from './hooks/useToasts'
 import { authErrorMessage, cleanAuthRedirectFromUrl, parseAuthRedirect } from './lib/errors'
 import { addDays, todayKey, weekOf } from './lib/dates'
@@ -14,10 +16,14 @@ import { TaskList } from './components/TaskList'
 import { Toasts } from './components/Toasts'
 import { AuthScreen } from './components/auth/AuthScreen'
 import { SetNewPasswordForm, VerifiedScreen } from './components/auth/AuthScreens'
+import { GithubSettings } from './components/GithubSettings'
+import { PullRequestList } from './components/PullRequestList'
+import { GithubActivity } from './components/GithubActivity'
 
-function TrackerApp() {
-  const { user, signOut } = useAuth()
-  const { theme, toggleTheme } = useTheme()
+type MainView = 'tasks' | 'prs' | 'settings'
+
+function TrackerApp({ github }: { github: GithubApi }) {
+  const { user } = useAuth()
   const { showToast } = useToasts()
   const today = todayKey()
   const [selectedDate, setSelectedDate] = useState(today)
@@ -67,53 +73,111 @@ function TrackerApp() {
   }
 
   return (
-    <div className="app-shell">
-      <Header email={user?.email ?? ''} theme={theme} onToggleTheme={toggleTheme} onSignOut={() => void signOut()} />
+    <main className="app-main">
+      <WeekStrip days={week} selected={selectedDate} today={today} stats={dayStats} onSelect={setSelectedDate} />
 
-      <main className="app-main">
-        <WeekStrip days={week} selected={selectedDate} today={today} stats={dayStats} onSelect={setSelectedDate} />
+      <DayHeading
+        dateKey={selectedDate}
+        today={today}
+        onPrev={() => setSelectedDate((d) => addDays(d, -1))}
+        onNext={() => setSelectedDate((d) => addDays(d, 1))}
+        onJumpToToday={() => setSelectedDate(today)}
+      />
 
-        <DayHeading
+      <DaySummary tasks={tasks} />
+
+      <AddTaskForm onAdd={addTask} titleInputRef={addInputRef} />
+
+      {error && (
+        <div className="load-error clay-card" role="alert">
+          <p>{error}</p>
+          <button type="button" className="pill-button ghost" onClick={() => void refresh()}>
+            Try again
+          </button>
+        </div>
+      )}
+
+      <TaskList
+        tasks={tasks}
+        loading={loading}
+        onToggleDone={toggleDone}
+        onUpdate={updateTaskFields}
+        onDelete={deleteTask}
+        onStartTimer={startTimer}
+        onPauseTimer={pauseTimer}
+      />
+
+      {user && (
+        <GithubActivity
+          userId={user.id}
           dateKey={selectedDate}
-          today={today}
-          onPrev={() => setSelectedDate((d) => addDays(d, -1))}
-          onNext={() => setSelectedDate((d) => addDays(d, 1))}
-          onJumpToToday={() => setSelectedDate(today)}
+          enabled={github.connections.length > 0}
         />
+      )}
 
-        <DaySummary tasks={tasks} />
-
-        <AddTaskForm onAdd={addTask} titleInputRef={addInputRef} />
-
-        {error && (
-          <div className="load-error clay-card" role="alert">
-            <p>{error}</p>
-            <button type="button" className="pill-button ghost" onClick={() => void refresh()}>
-              Try again
-            </button>
-          </div>
+      <footer className="app-footer">
+        {unfinishedCount > 0 ? (
+          <button type="button" className="pill-button ghost" onClick={() => void handleMoveUnfinished()}>
+            Move unfinished to tomorrow ({unfinishedCount})
+          </button>
+        ) : (
+          <span className="footer-note">Press N to add a task · Start a timer and it keeps running across reloads and devices.</span>
         )}
+      </footer>
+    </main>
+  )
+}
 
-        <TaskList
-          tasks={tasks}
-          loading={loading}
-          onToggleDone={toggleDone}
-          onUpdate={updateTaskFields}
-          onDelete={deleteTask}
-          onStartTimer={startTimer}
-          onPauseTimer={pauseTimer}
-        />
+function MainApp({ user }: { user: User }) {
+  const { signOut } = useAuth()
+  const { theme, toggleTheme } = useTheme()
+  const github = useGithub(user.id)
+  const [view, setView] = useState<MainView>('tasks')
 
-        <footer className="app-footer">
-          {unfinishedCount > 0 ? (
-            <button type="button" className="pill-button ghost" onClick={() => void handleMoveUnfinished()}>
-              Move unfinished to tomorrow ({unfinishedCount})
-            </button>
-          ) : (
-            <span className="footer-note">Press N to add a task · Start a timer and it keeps running across reloads and devices.</span>
-          )}
-        </footer>
-      </main>
+  return (
+    <div className="app-shell">
+      <Header
+        email={user.email ?? ''}
+        theme={theme}
+        onToggleTheme={toggleTheme}
+        onSignOut={() => void signOut()}
+        onOpenSettings={() => setView('settings')}
+        settingsActive={view === 'settings'}
+      />
+
+      {view !== 'settings' && (
+        <nav className="tab-strip" aria-label="Main sections">
+          <button
+            type="button"
+            className={`tab-pill${view === 'tasks' ? ' is-selected' : ''}`}
+            aria-current={view === 'tasks' ? 'page' : undefined}
+            onClick={() => setView('tasks')}
+          >
+            Tasks
+          </button>
+          <button
+            type="button"
+            className={`tab-pill${view === 'prs' ? ' is-selected' : ''}`}
+            aria-current={view === 'prs' ? 'page' : undefined}
+            onClick={() => setView('prs')}
+          >
+            Pull requests
+          </button>
+        </nav>
+      )}
+
+      {view === 'tasks' && <TrackerApp github={github} />}
+      {view === 'prs' && (
+        <PullRequestList userId={user.id} github={github} onOpenTasks={() => setView('tasks')} />
+      )}
+      {view === 'settings' && (
+        <div className="settings-page">
+          <GithubSettings github={github} />
+          <button type="button" className="pill-button ghost" onClick={() => setView('tasks')}>
+            Back to tasks
+          </button>
+        </div>
+      )}
     </div>
   )
 }
@@ -187,7 +251,7 @@ function Shell() {
   )
 
   const handleResend = useCallback(
-    async (email: string) => {
+    async (email: string, _variant: 'signup' | 'recovery' | 'magic_link') => {
       const { error } = await resendVerification(email)
       return error ? authErrorMessage(error) : null
     },
@@ -267,7 +331,7 @@ function Shell() {
     )
   }
 
-  return <TrackerApp />
+  return <MainApp user={session.user} />
 }
 
 export default function App() {

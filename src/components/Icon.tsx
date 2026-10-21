@@ -112,3 +112,81 @@ export function MailIcon({ size = 28, className }: IconProps) {
     </svg>
   )
 }
+
+export function GearIcon({ size = 18, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34h.09a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87v.09a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1z" />
+    </svg>
+  )
+}
+
+export function PrIcon({ size = 15, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <circle cx="6" cy="6" r="2.2" />
+      <circle cx="6" cy="18" r="2.2" />
+      <path d="M6 8.2v7.6" />
+      <circle cx="18" cy="18" r="2.2" />
+      <path d="M18 15.8V12a4 4 0 0 0-4-4H9" />
+      <path d="M11 6L9 8l2 2" />
+    </svg>
+  )
+}
+
+export function ExternalLinkIcon({ size = 14, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <path d="M14 4h6v6" />
+      <path d="M20 4l-8.5 8.5" />
+      <path d="M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4" />
+    </svg>
+  )
+}
+
+export function SyncIcon({ size = 15, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <path d="M20 11a8 8 0 0 0-14.3-4.9M4 13a8 8 0 0 0 14.3 4.9" />
+      <path d="M4 4v4h4" />
+      <path d="M20 20v-4h-4" />
+    </svg>
+  )
+}
+
+/** Hollow circle — open PR. */
+export function PrStateOpenIcon({ size = 14, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} className={className} aria-hidden="true">
+      <circle cx="12" cy="12" r="7.5" />
+    </svg>
+  )
+}
+
+/** Filled circle — merged PR. */
+export function PrStateMergedIcon({ size = 14, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+      <circle cx="12" cy="12" r="7.5" />
+    </svg>
+  )
+}
+
+/** Crossed circle — closed (not merged). */
+export function PrStateClosedIcon({ size = 14, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" className={className} aria-hidden="true">
+      <circle cx="12" cy="12" r="7.5" />
+      <path d="M9.2 9.2l5.6 5.6M14.8 9.2l-5.6 5.6" />
+    </svg>
+  )
+}
+
+export function ChevronDownIcon({ size = 16, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <path d="M6 9l6 6 6-6" />
+    </svg>
+  )
+}

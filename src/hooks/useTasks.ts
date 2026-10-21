@@ -134,7 +134,11 @@ export function useTasks(userId: string | undefined, selectedDate: string) {
   )
 
   const addTask = useCallback(
-    async (title: string, estimateMinutes: number | null) => {
+    async (
+      title: string,
+      estimateMinutes: number | null,
+      link?: { url: string; title: string },
+    ) => {
       if (!userId) return false
       const trimmed = title.trim()
       if (!trimmed) return false
@@ -147,6 +151,8 @@ export function useTasks(userId: string | undefined, selectedDate: string) {
           task_date: selectedDate,
           estimate_minutes: estimateMinutes,
           sort_order: maxSort + 1,
+          github_pr_url: link?.url ?? null,
+          github_pr_title: link?.title ?? null,
         })
         .select()
         .single()

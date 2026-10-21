@@ -1,4 +1,4 @@
-import { MoonIcon, SignOutIcon, SunIcon } from './Icon'
+import { GearIcon, MoonIcon, SignOutIcon, SunIcon } from './Icon'
 import type { Theme } from '../hooks/useTheme'
 
 interface HeaderProps {
@@ -6,9 +6,11 @@ interface HeaderProps {
   theme: Theme
   onToggleTheme: () => void
   onSignOut: () => void
+  onOpenSettings: () => void
+  settingsActive: boolean
 }
 
-export function Header({ email, theme, onToggleTheme, onSignOut }: HeaderProps) {
+export function Header({ email, theme, onToggleTheme, onSignOut, onOpenSettings, settingsActive }: HeaderProps) {
   return (
     <header className="app-header">
       <div className="app-brand">
@@ -26,6 +28,15 @@ export function Header({ email, theme, onToggleTheme, onSignOut }: HeaderProps) 
           aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
         >
           {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
+        </button>
+        <button
+          type="button"
+          className={`icon-button${settingsActive ? ' is-active' : ''}`}
+          onClick={onOpenSettings}
+          aria-label="Open settings"
+          aria-pressed={settingsActive}
+        >
+          <GearIcon />
         </button>
         <button type="button" className="icon-button" onClick={onSignOut} aria-label="Sign out">
           <SignOutIcon />

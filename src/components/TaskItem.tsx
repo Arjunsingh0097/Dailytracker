@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { KeyboardEvent } from 'react'
-import { CheckIcon, PauseIcon, PencilIcon, PlayIcon, TrashIcon } from './Icon'
+import { CheckIcon, ExternalLinkIcon, PauseIcon, PencilIcon, PlayIcon, PrIcon, TrashIcon } from './Icon'
 import { useTimer } from '../hooks/useTimer'
 import { formatDuration, formatMinutes } from '../lib/format'
 import type { Task } from '../types'
@@ -132,14 +132,29 @@ export function TaskItem({ task, onToggleDone, onUpdate, onDelete, onStartTimer,
               aria-label="Edit task title"
             />
           ) : (
-            <button
-              type="button"
-              className="task-title"
-              onClick={() => setEditingTitle(true)}
-              aria-label={`Edit title: ${task.title}`}
-            >
-              {task.title}
-            </button>
+            <span className="task-title-row">
+              <button
+                type="button"
+                className="task-title"
+                onClick={() => setEditingTitle(true)}
+                aria-label={`Edit title: ${task.title}`}
+              >
+                {task.title}
+              </button>
+              {task.github_pr_url && (
+                <a
+                  className="task-pr-link"
+                  href={task.github_pr_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`Open ${task.github_pr_title ?? 'pull request'} on GitHub`}
+                  title={task.github_pr_title ?? 'Open pull request on GitHub'}
+                >
+                  <PrIcon size={14} />
+                  <ExternalLinkIcon size={11} />
+                </a>
+              )}
+            </span>
           )}
 
           <div className="task-meta">

@@ -6,7 +6,7 @@ import { useTheme } from './hooks/useTheme'
 import { useGithub, type GithubApi } from './hooks/useGithub'
 import { useToasts, ToastProvider } from './hooks/useToasts'
 import { authErrorMessage, cleanAuthRedirectFromUrl, parseAuthRedirect } from './lib/errors'
-import { addDays, todayKey, weekOf } from './lib/dates'
+import { addDays, formatDayHeading, todayKey, weekOf } from './lib/dates'
 import { Header } from './components/Header'
 import { WeekStrip } from './components/WeekStrip'
 import { DayHeading } from './components/DayHeading'
@@ -22,12 +22,37 @@ import { GithubActivity } from './components/GithubActivity'
 
 type MainView = 'tasks' | 'prs' | 'settings'
 
+/** Read ?date=YYYY-MM-DD from the URL (shareable day links), validated. */
+function dateFromUrl(): string | null {
+  const raw = new URLSearchParams(window.location.search).get('date')
+  if (!raw || !/^\d{4}-\d{2}-\d{2}$/.test(raw)) return null
+  const parsed = new Date(`${raw}T00:00:00`)
+  if (Number.isNaN(parsed.getTime())) return null
+  const y = parsed.getFullYear()
+  const m = String(parsed.getMonth() + 1).padStart(2, '0')
+  const d = String(parsed.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}` === raw ? raw : null
+}
+
+/** Write ?date= into the address bar without navigating. */
+function syncDateToUrl(dateKey: string): void {
+  const url = new URL(window.location.href)
+  if (url.searchParams.get('date') === dateKey) return
+  url.searchParams.set('date', dateKey)
+  window.history.replaceState(null, '', url.toString())
+}
+
 function TrackerApp({ github }: { github: GithubApi }) {
   const { user } = useAuth()
   const { showToast } = useToasts()
   const today = todayKey()
-  const [selectedDate, setSelectedDate] = useState(today)
+  const [selectedDate, setSelectedDate] = useState(() => dateFromUrl() ?? todayKey())
   const addInputRef = useRef<HTMLInputElement | null>(null)
+
+  // Keep the address bar in sync so every day has a shareable link.
+  useEffect(() => {
+    syncDateToUrl(selectedDate)
+  }, [selectedDate])
 
   const {
     tasks,
@@ -72,6 +97,20 @@ function TrackerApp({ github }: { github: GithubApi }) {
     }
   }
 
+  const handleCopyLink = async () => {
+    const url = new URL(window.location.href)
+    url.searchParams.set('date', selectedDate)
+    try {
+      await navigator.clipboard.writeText(url.toString())
+      showToast({ message: `Link to ${formatDayHeading(selectedDate)} copied.`, type: 'success' })
+    } catch {
+      showToast({
+        message: 'Could not copy — select the address bar and copy the link from there.',
+        type: 'error',
+      })
+    }
+  }
+
   return (
     <main className="app-main">
       <WeekStrip days={week} selected={selectedDate} today={today} stats={dayStats} onSelect={setSelectedDate} />
@@ -82,6 +121,7 @@ function TrackerApp({ github }: { github: GithubApi }) {
         onPrev={() => setSelectedDate((d) => addDays(d, -1))}
         onNext={() => setSelectedDate((d) => addDays(d, 1))}
         onJumpToToday={() => setSelectedDate(today)}
+        onCopyLink={() => void handleCopyLink()}
       />
 
       <DaySummary tasks={tasks} />

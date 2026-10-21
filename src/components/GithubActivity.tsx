@@ -25,7 +25,7 @@ export function GithubActivity({ userId, dateKey, enabled }: GithubActivityProps
 
   const handleAdd = async (pr: PullRequest) => {
     setBusyId(pr.id)
-    const result = await createTaskFromPr(userId, todayKey(), pr)
+    const result = await createTaskFromPr(userId, dateKey, pr)
     setBusyId(null)
     if (result.ok) {
       setAddedUrls((prev) => new Set(prev).add(pr.html_url))

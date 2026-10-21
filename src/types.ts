@@ -2,6 +2,7 @@ export interface Task {
   id: string
   user_id: string
   title: string
+  description: string | null
   task_date: string
   estimate_minutes: number | null
   spent_seconds: number

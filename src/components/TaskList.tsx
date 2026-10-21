@@ -6,7 +6,7 @@ interface TaskListProps {
   tasks: Task[]
   loading: boolean
   onToggleDone: (task: Task) => Promise<boolean>
-  onUpdate: (id: string, patch: { title?: string; estimate_minutes?: number | null }) => Promise<boolean>
+  onUpdate: (id: string, patch: { title?: string; estimate_minutes?: number | null; description?: string | null }) => Promise<boolean>
   onDelete: (task: Task) => Promise<boolean>
   onStartTimer: (task: Task) => Promise<boolean>
   onPauseTimer: (task: Task) => Promise<boolean>

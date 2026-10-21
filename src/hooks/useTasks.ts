@@ -167,7 +167,7 @@ export function useTasks(userId: string | undefined, selectedDate: string) {
   )
 
   const updateTaskFields = useCallback(
-    async (id: string, patch: { title?: string; estimate_minutes?: number | null }) => {
+    async (id: string, patch: { title?: string; estimate_minutes?: number | null; description?: string | null }) => {
       const existing = tasks.find((t) => t.id === id)
       return mutate(
         (list) => {
@@ -259,6 +259,7 @@ export function useTasks(userId: string | undefined, selectedDate: string) {
                   id: task.id,
                   user_id: task.user_id,
                   title: task.title,
+                  description: task.description,
                   task_date: task.task_date,
                   estimate_minutes: task.estimate_minutes,
                   spent_seconds: task.spent_seconds,

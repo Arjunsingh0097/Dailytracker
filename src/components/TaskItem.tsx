@@ -8,7 +8,7 @@ import type { Task } from '../types'
 interface TaskItemProps {
   task: Task
   onToggleDone: (task: Task) => Promise<boolean>
-  onUpdate: (id: string, patch: { title?: string; estimate_minutes?: number | null }) => Promise<boolean>
+  onUpdate: (id: string, patch: { title?: string; estimate_minutes?: number | null; description?: string | null }) => Promise<boolean>
   onDelete: (task: Task) => Promise<boolean>
   onStartTimer: (task: Task) => Promise<boolean>
   onPauseTimer: (task: Task) => Promise<boolean>
@@ -18,11 +18,14 @@ export function TaskItem({ task, onToggleDone, onUpdate, onDelete, onStartTimer,
   const { seconds, running } = useTimer(task.timer_started_at, task.spent_seconds)
   const [editingTitle, setEditingTitle] = useState(false)
   const [editingEstimate, setEditingEstimate] = useState(false)
+  const [editingDesc, setEditingDesc] = useState(false)
   const [draftTitle, setDraftTitle] = useState(task.title)
   const [draftEstimate, setDraftEstimate] = useState(task.estimate_minutes?.toString() ?? '')
+  const [draftDesc, setDraftDesc] = useState(task.description ?? '')
   const [busy, setBusy] = useState(false)
   const titleInputRef = useRef<HTMLInputElement>(null)
   const estimateInputRef = useRef<HTMLInputElement>(null)
+  const descInputRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
     if (editingTitle) titleInputRef.current?.focus()
@@ -39,6 +42,14 @@ export function TaskItem({ task, onToggleDone, onUpdate, onDelete, onStartTimer,
   useEffect(() => {
     if (!editingEstimate) setDraftEstimate(task.estimate_minutes?.toString() ?? '')
   }, [task.estimate_minutes, editingEstimate])
+
+  useEffect(() => {
+    if (editingDesc) descInputRef.current?.focus()
+  }, [editingDesc])
+
+  useEffect(() => {
+    if (!editingDesc) setDraftDesc(task.description ?? '')
+  }, [task.description, editingDesc])
 
   const estimateSeconds = task.estimate_minutes != null ? task.estimate_minutes * 60 : null
   const overEstimate = estimateSeconds != null && seconds > estimateSeconds
@@ -75,6 +86,19 @@ export function TaskItem({ task, onToggleDone, onUpdate, onDelete, onStartTimer,
     setBusy(false)
   }
 
+  const saveDescription = async () => {
+    setEditingDesc(false)
+    const trimmed = draftDesc.trim()
+    const next = trimmed === '' ? null : trimmed.slice(0, 2000)
+    if (next === (task.description ?? null)) {
+      setDraftDesc(task.description ?? '')
+      return
+    }
+    setBusy(true)
+    await onUpdate(task.id, { description: next })
+    setBusy(false)
+  }
+
   const handleTimerToggle = async () => {
     setBusy(true)
     if (running) await onPauseTimer(task)
@@ -99,6 +123,16 @@ export function TaskItem({ task, onToggleDone, onUpdate, onDelete, onStartTimer,
     } else if (event.key === 'Escape') {
       setDraftEstimate(task.estimate_minutes?.toString() ?? '')
       setEditingEstimate(false)
+    }
+  }
+
+  const descKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+      event.preventDefault()
+      void saveDescription()
+    } else if (event.key === 'Escape') {
+      setDraftDesc(task.description ?? '')
+      setEditingDesc(false)
     }
   }
 
@@ -141,6 +175,7 @@ export function TaskItem({ task, onToggleDone, onUpdate, onDelete, onStartTimer,
               >
                 {task.title}
               </button>
+              {task.is_done && <span className="done-chip">Done</span>}
               {task.github_pr_url && (
                 <a
                   className="task-pr-link"
@@ -155,6 +190,39 @@ export function TaskItem({ task, onToggleDone, onUpdate, onDelete, onStartTimer,
                 </a>
               )}
             </span>
+          )}
+
+          {editingDesc ? (
+            <textarea
+              ref={descInputRef}
+              className="clay-input task-desc-input"
+              value={draftDesc}
+              maxLength={2000}
+              rows={3}
+              placeholder="Add a description… (⌘/Ctrl+Enter to save, Esc to cancel)"
+              onChange={(e) => setDraftDesc(e.target.value)}
+              onKeyDown={descKeyDown}
+              onBlur={() => void saveDescription()}
+              aria-label="Task description"
+            />
+          ) : task.description ? (
+            <button
+              type="button"
+              className="task-desc"
+              onClick={() => setEditingDesc(true)}
+              aria-label={`Edit description: ${task.description}`}
+            >
+              {task.description}
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="task-desc-add"
+              onClick={() => setEditingDesc(true)}
+              disabled={busy}
+            >
+              Add description
+            </button>
           )}
 
           <div className="task-meta">

@@ -11,8 +11,8 @@ A minimal, fast daily task tracker: plan each day, start a timer on a task, tick
 1. Go to [supabase.com](https://supabase.com) → **New project**.
 2. Pick a name/region and save the database password.
 3. Open **Project Settings → API** and copy:
-   - **Project URL** → `VITE_SUPABASE_URL`
-   - **Publishable/anon key** → `VITE_SUPABASE_ANON_KEY`
+   - **Project URL** → `SUPABASE_URL`
+   - **Publishable/anon key** → `SUPABASE_ANON_KEY`
 
 Never use the `service_role` key in this app (or any client code). Never commit it or any SMTP credentials — the only secrets file is `.env`, which is gitignored.
 
@@ -67,8 +67,8 @@ cp .env.example .env
 Fill `.env` with your project’s values (only these two):
 
 ```
-VITE_SUPABASE_URL=https://your-project-ref.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-or-publishable-key
+SUPABASE_URL=https://your-project-ref.supabase.co
+SUPABASE_ANON_KEY=your-anon-or-publishable-key
 ```
 
 ## 7. Local development
@@ -84,7 +84,7 @@ npm run lint
 
 1. Push the repo to GitHub.
 2. In Vercel: **Add New Project** → import the repo (Vite is auto-detected).
-3. Add the same two env vars (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`) under **Settings → Environment Variables**.
+3. Add the same two env vars (`SUPABASE_URL`, `SUPABASE_ANON_KEY`) under **Settings → Environment Variables**.
 4. Deploy, then add the production URL to Supabase **Redirect URLs** and set it as the **Site URL**.
 
 Netlify works the same way (build command `npm run build`, publish directory `dist`).

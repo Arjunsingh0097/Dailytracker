@@ -1918,6 +1918,21 @@ body {
 
 .share-title-row {
   cursor: default;
+  padding-right: 4px;
+}
+
+.share-day .task-card {
+  position: relative;
+}
+
+.share-day .task-card.is-done {
+  padding-right: 84px;
+}
+
+.share-day .done-chip-corner {
+  position: absolute;
+  top: 14px;
+  right: 14px;
 }
 
 .share-desc {

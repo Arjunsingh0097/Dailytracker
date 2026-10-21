@@ -82,16 +82,18 @@ export function SharedDay({ token }: { token: string }) {
               const over = estimateSeconds != null && seconds > estimateSeconds
               return (
                 <li key={index} className={`task-card clay-card${row.is_done ? ' is-done' : ''}`}>
+                  {row.is_done && (
+                    <span className="done-chip done-chip-corner" aria-label="Closed">
+                      Done
+                    </span>
+                  )}
                   <span className="task-check-wrap" aria-hidden="true">
                     <span className={`task-checkbox clay-check${row.is_done ? ' is-checked' : ''}`}>
                       {row.is_done ? '✓' : ''}
                     </span>
                   </span>
                   <div className="task-body">
-                    <span className="task-title share-title-row">
-                      {row.title}
-                      {row.is_done && <span className="done-chip">Done</span>}
-                    </span>
+                    <span className="task-title share-title-row">{row.title}</span>
                     {row.description && <p className="task-desc share-desc">{row.description}</p>}
                     <div className="task-meta">
                       {row.estimate_minutes != null && (

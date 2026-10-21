@@ -1744,6 +1744,55 @@ body {
 }
 
 /* --------------------------------------------------------------------------
+   Public share view
+   -------------------------------------------------------------------------- */
+
+.share-shell {
+  padding-top: 40px;
+}
+
+.share-brand {
+  justify-content: center;
+}
+
+.share-day {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.share-day-title {
+  margin: 0;
+  text-align: center;
+}
+
+.share-day-note {
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.task-checkbox.is-checked {
+  box-shadow: var(--shadow-inset);
+  color: var(--ink);
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+
+.share-title-row {
+  cursor: default;
+}
+
+.share-desc {
+  margin: 0;
+  cursor: default;
+}
+
+.share-day .task-card .task-pr-link {
+  margin-top: 0;
+}
+
+/* --------------------------------------------------------------------------
    Responsive
    -------------------------------------------------------------------------- */
 

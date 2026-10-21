@@ -7,6 +7,8 @@ import { useGithub, type GithubApi } from './hooks/useGithub'
 import { useToasts, ToastProvider } from './hooks/useToasts'
 import { authErrorMessage, cleanAuthRedirectFromUrl, parseAuthRedirect } from './lib/errors'
 import { addDays, formatDayHeading, todayKey, weekOf } from './lib/dates'
+import { buildShareUrl, copyText } from './lib/shares'
+import { supabase } from './lib/supabase'
 import { Header } from './components/Header'
 import { WeekStrip } from './components/WeekStrip'
 import { DayHeading } from './components/DayHeading'
@@ -19,6 +21,7 @@ import { SetNewPasswordForm, VerifiedScreen } from './components/auth/AuthScreen
 import { GithubSettings } from './components/GithubSettings'
 import { PullRequestList } from './components/PullRequestList'
 import { GithubActivity } from './components/GithubActivity'
+import { SharedDay } from './components/SharedDay'
 
 type MainView = 'tasks' | 'prs' | 'settings'
 
@@ -53,6 +56,85 @@ function TrackerApp({ github }: { github: GithubApi }) {
   useEffect(() => {
     syncDateToUrl(selectedDate)
   }, [selectedDate])
+
+  // Public share state for the selected day
+  const [shareId, setShareId] = useState<string | null>(null)
+  const [sharing, setSharing] = useState(false)
+
+  useEffect(() => {
+    if (!user) {
+      setShareId(null)
+      return
+    }
+    let cancelled = false
+    void supabase
+      .from('day_shares')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('task_date', selectedDate)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!cancelled) setShareId(data?.id ?? null)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [user?.id, selectedDate])
+
+  const copyShareLink = async (id: string) => {
+    const ok = await copyText(buildShareUrl(id))
+    if (ok) {
+      showToast({
+        message: `Public link copied — anyone with it can view ${formatDayHeading(selectedDate)} without signing in.`,
+        type: 'success',
+        action: { label: 'Unshare', onClick: () => void revokeShare(id) },
+      })
+    } else {
+      showToast({ message: 'Could not copy — open the share link from the address bar instead.', type: 'error' })
+    }
+  }
+
+  const handleShare = async () => {
+    if (!user || sharing) return
+    setSharing(true)
+    const { data, error } = await supabase
+      .from('day_shares')
+      .insert({ user_id: user.id, task_date: selectedDate })
+      .select('id')
+      .single()
+    setSharing(false)
+    if (error) {
+      if (error.code === '23505') {
+        const { data: existing } = await supabase
+          .from('day_shares')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('task_date', selectedDate)
+          .maybeSingle()
+        if (existing) {
+          setShareId(existing.id)
+          await copyShareLink(existing.id)
+        }
+        return
+      }
+      showToast({ message: `Could not share this day (${error.message}).`, type: 'error' })
+      return
+    }
+    if (data) {
+      setShareId(data.id)
+      await copyShareLink(data.id)
+    }
+  }
+
+  const revokeShare = async (id: string) => {
+    const { error } = await supabase.from('day_shares').delete().eq('id', id)
+    if (error) {
+      showToast({ message: `Could not stop sharing (${error.message}).`, type: 'error' })
+      return
+    }
+    setShareId(null)
+    showToast({ message: 'Sharing stopped — the public link no longer works.', type: 'info' })
+  }
 
   const {
     tasks,
@@ -97,20 +179,6 @@ function TrackerApp({ github }: { github: GithubApi }) {
     }
   }
 
-  const handleCopyLink = async () => {
-    const url = new URL(window.location.href)
-    url.searchParams.set('date', selectedDate)
-    try {
-      await navigator.clipboard.writeText(url.toString())
-      showToast({ message: `Link to ${formatDayHeading(selectedDate)} copied.`, type: 'success' })
-    } catch {
-      showToast({
-        message: 'Could not copy — select the address bar and copy the link from there.',
-        type: 'error',
-      })
-    }
-  }
-
   return (
     <main className="app-main">
       <WeekStrip days={week} selected={selectedDate} today={today} stats={dayStats} onSelect={setSelectedDate} />
@@ -118,10 +186,18 @@ function TrackerApp({ github }: { github: GithubApi }) {
       <DayHeading
         dateKey={selectedDate}
         today={today}
+        shared={shareId !== null}
+        sharing={sharing}
         onPrev={() => setSelectedDate((d) => addDays(d, -1))}
         onNext={() => setSelectedDate((d) => addDays(d, 1))}
         onJumpToToday={() => setSelectedDate(today)}
-        onCopyLink={() => void handleCopyLink()}
+        onShare={() => void handleShare()}
+        onCopyShare={() => {
+          if (shareId) void copyShareLink(shareId)
+        }}
+        onRevokeShare={() => {
+          if (shareId) void revokeShare(shareId)
+        }}
       />
 
       <DaySummary tasks={tasks} />
@@ -375,6 +451,11 @@ function Shell() {
 }
 
 export default function App() {
+  const [shareToken] = useState(() => new URLSearchParams(window.location.search).get('share'))
+
+  // Public share links render without any sign-in.
+  if (shareToken) return <SharedDay token={shareToken} />
+
   return (
     <ToastProvider>
       <Shell />
